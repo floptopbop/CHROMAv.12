@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>CHROMA 13</title>
+<title>CHROMA 14</title>
 <style>
 :root{
   --chrome:#ffffff;--sheet:#ffffff;--soft:#f2f3f5;--line:#e5e7eb;--ink:#14171c;--muted:#6b7280;--faint:#9ca3af;
@@ -215,6 +215,28 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .pkCount>span{font-size:12px;color:var(--muted)}
 .pkTools{display:flex;gap:6px}
 
+.lab{position:fixed;inset:0;z-index:30;background:var(--chrome);display:flex;flex-direction:column;padding-top:var(--safeT)}
+.labTop{display:flex;align-items:center;gap:6px}
+.labStage{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--soft);position:relative;touch-action:none;overflow:hidden}
+#labView{display:block;box-shadow:0 2px 14px rgba(0,0,0,.18);-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+#labView.px{image-rendering:pixelated}
+.labTag{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:7px;background:rgba(0,0,0,.55);color:#fff;font:600 11px var(--mono);pointer-events:none}
+.labHint{flex:none;text-align:center;font-size:11px;color:var(--muted);padding:5px 10px;border-top:1px solid var(--line)}
+.labLow{flex:none;max-height:35vh;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px 14px calc(10px + var(--safeB));border-top:1px solid var(--line)}
+.lab.folded .labLow{display:none}
+.labFlip{display:flex;align-items:center;gap:8px}
+.labPal{flex:1 1 auto;min-width:0}
+.labStrip{display:flex;height:30px;border-radius:8px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.labStrip span{flex:1 1 0}
+.labName{display:flex;justify-content:space-between;gap:8px;margin-top:3px;font:11px var(--mono);color:var(--muted);white-space:nowrap}
+.labName b{color:var(--ink);font-weight:650;overflow:hidden;text-overflow:ellipsis}
+.labRow{display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap}
+.labLbl{font-size:11.5px;color:var(--muted);width:52px}
+.labSeg{margin-top:9px}.labSeg button{flex:1 1 0}
+.labNote{margin:6px 0 0!important;font-size:11px}
+.labChk{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12px;color:var(--muted)}
+.labBtns{margin-top:10px}
+.labRow.off,.sl.off,.labChk.off{opacity:.38}
 .toast{position:fixed;z-index:40;left:50%;top:calc(14px + var(--safeT));transform:translate(-50%,-8px);opacity:0;pointer-events:none;padding:8px 14px;border-radius:99px;background:var(--ink);color:var(--chrome);font-size:12px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25);transition:.18s;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .shot{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,12,15,.92);padding:20px}
@@ -337,7 +359,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
           <button class="tile" data-act="save"><svg class="i"><use href="#i-heart"/></svg>Save</button>
           <button class="tile" data-act="saved"><svg class="i"><use href="#i-list"/></svg>Saved</button>
           <button class="tile" data-act="sheet"><svg class="i"><use href="#i-sheet"/></svg>Sheet PNG</button>
-          <button class="tile" data-act="tryon"><svg class="i"><use href="#i-brush"/></svg>Try on image</button>
+          <button class="tile" data-act="tryon"><svg class="i"><use href="#i-brush"/></svg>Image lab</button>
           <button class="tile" data-act="export"><svg class="i"><use href="#i-export"/></svg>Export</button>
           <button class="tile" data-act="snap"><svg class="i"><use href="#i-camera"/></svg>Snapshot</button>
           <button class="tile" data-act="details"><svg class="i"><use href="#i-contrast"/></svg>Contrast</button>
@@ -402,6 +424,33 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
     <div class="pkInfo"><b id="pkHex">—</b><span id="pkPos"></span></div>
     <div class="vers"><div class="vchips" id="vchips"></div><button class="tbtn" id="pkMore" aria-label="New versions"><svg class="i"><use href="#i-refresh"/></svg></button></div>
     <div class="pkCount"><span>Colors</span><div class="pkTools"><button class="tbtn" id="pkChange">Change image</button><div class="stepper"><button id="pkMinus" aria-label="Fewer colors">−</button><output id="pkN">5</output><button id="pkPlus" aria-label="More colors">+</button></div></div></div>
+  </div>
+</div>
+
+<div class="lab" id="lab" hidden>
+  <div class="pkHead">
+    <button class="xbtn" id="labClose" aria-label="Close image lab"><svg class="i"><use href="#i-x"/></svg></button>
+    <strong>Image lab</strong>
+    <div class="labTop"><button class="tbtn" id="labFold" aria-label="Hide controls">▾</button><button class="tbtn" id="labSnap">Snap</button><button class="pkUse" id="labUse">Use</button></div>
+  </div>
+  <div class="labStage" id="labStage">
+    <canvas id="labView" hidden aria-label="Image with the palette applied. Swipe sideways for other palettes, up or down for iterations, hold to see the original."></canvas>
+    <div class="labTag" id="labTag" hidden></div>
+    <div class="pkEmpty" id="labEmpty"><button class="btn primary" id="labChoose" style="padding:0 18px">Choose an image</button><p class="note">Swap any palette onto your own image. Flip through your saved palettes and every iteration of each one.</p></div>
+  </div>
+  <div class="labHint" id="labHint">Swipe ◀ ▶ palettes · swipe ▲ ▼ iterations · hold for original</div>
+  <div class="labLow" id="labLow">
+    <div class="labFlip"><button class="tbtn" id="labPrev" aria-label="Previous palette">◀</button><div class="labPal"><div class="labStrip" id="labStrip"></div><div class="labName"><b id="labName">Current</b><span id="labIter"></span></div></div><button class="tbtn" id="labNext" aria-label="Next palette">▶</button></div>
+    <div class="labRow"><span class="labLbl">Iteration</span><button class="tbtn" id="labCycM" aria-label="Previous iteration">−</button><button class="tbtn" id="labCycP" aria-label="Next iteration">+</button><button class="tbtn" id="labRev">Reverse</button><button class="tbtn" id="labOrig">Iter 1</button></div>
+    <div class="seg labSeg" id="labMethod"><button data-m="ramp" class="on">Smooth ramp</button><button data-m="bands">Bands</button><button data-m="nearest">Nearest</button><button data-m="recolor">Recolor</button></div>
+    <p class="note labNote" id="labNote"></p>
+    <div class="sl"><label for="labMix">Mix</label><input class="grad" id="labMix" type="range" min="0" max="100" step="1" value="100"><output id="labMixOut">100%</output></div>
+    <div class="sl"><label for="labPx">Pixel</label><input class="grad" id="labPx" type="range" min="1" max="24" step="1" value="1"><output id="labPxOut">1</output></div>
+    <div class="sl" id="labSoftRow"><label for="labSoft">Soft</label><input class="grad" id="labSoft" type="range" min="0" max="100" step="1" value="45"><output id="labSoftOut">45</output></div>
+    <div class="labRow" id="labDitherRow"><span class="labLbl">Dither</span><div class="seg" id="labDither"><button data-d="off" class="on">Off</button><button data-d="b4">Bayer 4</button><button data-d="b8">Bayer 8</button><button data-d="fs">Diffuse</button></div></div>
+    <div class="sl" id="labAmtRow"><label for="labAmt">Amount</label><input class="grad" id="labAmt" type="range" min="0" max="100" step="1" value="50"><output id="labAmtOut">50</output></div>
+    <label class="labChk"><input type="checkbox" id="labSpread" checked> Even spread (use every color, whatever the exposure)</label>
+    <div class="btnRow labBtns"><button class="btn" id="labChange">Change image</button><button class="btn" id="labSheetP">All palettes PNG</button><button class="btn" id="labSheetI">All iterations PNG</button></div>
   </div>
 </div>
 
@@ -1300,29 +1349,190 @@ $('sheetPng').addEventListener('click',makeSheet);
 $('sheetLoad').addEventListener('click',()=>$('sheetFile').click());
 $('sheetFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)loadSheetFile(f);});
 
-/* ================= try on image — the palette laid over a picture by its light =================
-   Darkest colour takes the shadows, lightest the highlights, blended in OKLab between them. */
-function tryOnCanvas(src){
-  const k=Math.min(1,1400/Math.max(src.width,src.height)),w=Math.round(src.width*k),h=Math.round(src.height*k),strip=Math.round(w*.06);
-  const cv=document.createElement('canvas');cv.width=w;cv.height=h+strip;const g=cv.getContext('2d',{willReadFrequently:true});
-  g.drawImage(src,0,0,w,h);const id=g.getImageData(0,0,w,h),d=id.data;
-  let stops=colors.map(c=>rgbToOklab(hexToRgb(c.hex))).sort((a,b)=>a[0]-b[0]);
-  if(stops.length===1){const o=stops[0];stops=[[.12,o[1]*.5,o[2]*.5],o,[.97,o[1]*.25,o[2]*.25]];}
-  const n=stops.length,lut=new Uint8ClampedArray(256*3);
-  for(let i=0;i<256;i++){const x=i/255*(n-1),a=Math.min(n-2,Math.floor(x)),f=x-a,A=stops[a],B=stops[a+1];
-    const rgb=oklabToRgb(A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f,A[2]+(B[2]-A[2])*f);for(let c=0;c<3;c++)lut[i*3+c]=Math.round(clamp(rgb[c],0,1)*255);}
-  // luminance → rank, so the full palette is used whatever the picture's exposure
-  const hist=new Uint32Array(256),Y=new Uint8Array(w*h);
-  for(let i=0,p=0;i<d.length;i+=4,p++){const y=Math.round(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]);Y[p]=y;hist[y]++;}
-  const cdf=new Uint8Array(256);let acc=0;for(let i=0;i<256;i++){acc+=hist[i];cdf[i]=Math.round((acc-hist[i]/2)/(w*h)*255);}
-  for(let i=0,p=0;i<d.length;i+=4,p++){const v=cdf[Y[p]]*3;d[i]=lut[v];d[i+1]=lut[v+1];d[i+2]=lut[v+2];}
-  g.putImageData(id,0,0);
-  const sw=w/colors.length;colors.forEach((c,i)=>{g.fillStyle=c.hex;g.fillRect(Math.floor(i*sw),h,Math.ceil(sw)+1,strip);});
-  return cv;
+/* ================= image lab — swap palettes onto your own image =================
+   Methods follow PIXEL_FORGE's swap engines: SMOOTH RAMP (gradient map by light), BANDS (luma ramp,
+   hard steps), NEAREST (pure swap to the closest palette colour) — plus RECOLOR, which moves the image's
+   own colour groups onto the palette and keeps texture. Iterations: the palette cycled and reversed
+   under the same match map, so the structure holds and only the skin changes. Deterministic throughout. */
+const LAB={src:null,prep:{},clusters:{},pal:0,cyc:0,rev:false,method:'ramp',dither:'off',hold:false,raf:0,lastKey:''};
+const LIN=new Float32Array(256);for(let i=0;i<256;i++)LIN[i]=srgbToLinear(i/255);
+const B4=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16-.5);
+const B8=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21].map(v=>(v+.5)/64-.5);
+function lab3(r,g,b){ // 0..255 → OKLab
+  const R=LIN[r],G=LIN[g],B=LIN[b];
+  const l=Math.cbrt(.4122214708*R+.5363325363*G+.0514459929*B),m=Math.cbrt(.2119034982*R+.6806995451*G+.1073969566*B),q=Math.cbrt(.0883024619*R+.2817188376*G+.6299787005*B);
+  return [.2104542553*l+.793617785*m-.0040720468*q,1.9779984951*l-2.428592205*m+.4505937099*q,.0259040371*l+.7827717662*m-.808675766*q];
 }
-function tryOn(src){closeSheet();const cv=tryOnCanvas(src);showShot(b64ToBytes(cv.toDataURL('image/png').split(',')[1]),'chroma-try-on.png');}
+function labPrep(src,maxSide,px){
+  const key=maxSide+'/'+px;if(LAB.prep[key])return LAB.prep[key];
+  const k=Math.min(1,maxSide/Math.max(src.width,src.height)),W=Math.max(1,Math.round(src.width*k)),H=Math.max(1,Math.round(src.height*k));
+  const w=Math.max(1,Math.round(W/px)),h=Math.max(1,Math.round(H/px)),cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  const g=cv.getContext('2d',{willReadFrequently:true});g.imageSmoothingQuality='high';g.drawImage(src,0,0,w,h);
+  const rgb=g.getImageData(0,0,w,h).data,N=w*h,L=new Float32Array(N),A=new Float32Array(N),Bb=new Float32Array(N),Y=new Float32Array(N),hist=new Uint32Array(1024);
+  let lo=1,hi=0;
+  for(let i=0;i<N;i++){const o=lab3(rgb[i*4],rgb[i*4+1],rgb[i*4+2]);L[i]=o[0];A[i]=o[1];Bb[i]=o[2];if(o[0]<lo)lo=o[0];if(o[0]>hi)hi=o[0];}
+  const span=Math.max(1e-4,hi-lo);
+  for(let i=0;i<N;i++)hist[Math.min(1023,Math.floor((L[i]-lo)/span*1024))]++;
+  const cdf=new Float32Array(1024);let acc=0;for(let i=0;i<1024;i++){cdf[i]=(acc+hist[i]/2)/N;acc+=hist[i];}
+  for(let i=0;i<N;i++)Y[i]=cdf[Math.min(1023,Math.floor((L[i]-lo)/span*1024))];
+  return LAB.prep[key]={w,h,W,H,rgb,L,A,B:Bb,Y,lo,span};
+}
+function labClusters(n){ // the image's own colour groups, darkest first; k-means seeded by lightness quantiles
+  if(LAB.clusters[n])return LAB.clusters[n];
+  const P=labPrep(LAB.src,900,1),N=P.w*P.h,step=Math.max(1,Math.floor(N/6000)),S=[];
+  for(let i=0;i<N;i+=step)S.push([P.L[i],P.A[i],P.B[i]]);
+  const byL=S.slice().sort((a,b)=>a[0]-b[0]);let C=[];for(let k=0;k<n;k++)C.push(byL[Math.min(byL.length-1,Math.floor((k+.5)/n*byL.length))].slice());
+  for(let it=0;it<14;it++){
+    const sum=C.map(()=>[0,0,0,0]);
+    for(const p of S){let bj=0,bd=1e9;for(let j=0;j<n;j++){const d=(p[0]-C[j][0])**2+(p[1]-C[j][1])**2+(p[2]-C[j][2])**2;if(d<bd){bd=d;bj=j;}}const t=sum[bj];t[0]+=p[0];t[1]+=p[1];t[2]+=p[2];t[3]++;}
+    C=C.map((c,j)=>sum[j][3]?[sum[j][0]/sum[j][3],sum[j][1]/sum[j][3],sum[j][2]/sum[j][3]]:c);
+  }
+  return LAB.clusters[n]=C.sort((a,b)=>a[0]-b[0]);
+}
+function labPalettes(){const lib=loadLib();return [{name:'Current palette',hexes:colors.map(c=>c.hex)}].concat(lib.map((p,i)=>({name:'Saved '+(i+1)+' of '+lib.length,hexes:p.hexes})));}
+function labState(){
+  const P=labPalettes();LAB.pal=((LAB.pal%P.length)+P.length)%P.length;
+  const p=P[LAB.pal],base=p.hexes.map(h=>{const o=rgbToOklab(hexToRgb(h));return {hex:h,lab:o};}).sort((a,b)=>a.lab[0]-b.lab[0]),n=base.length;
+  LAB.cyc=((LAB.cyc%n)+n)%n;
+  let o=base.slice();if(LAB.rev)o.reverse();const out=o.map((_,i)=>o[(i+LAB.cyc)%n]);
+  return {p,P,base,out,n,iter:LAB.cyc+(LAB.rev?n:0)+1,iters:n*2};
+}
+function rgbBytes(lab){const c=oklabToRgb(lab[0],lab[1],lab[2]);return [Math.round(clamp(c[0],0,1)*255),Math.round(clamp(c[1],0,1)*255),Math.round(clamp(c[2],0,1)*255)];}
+function labRender(P,st,opt){
+  const {w,h,L,A,B,Y,rgb,lo,span}=P,N=w*h,out=new Uint8ClampedArray(N*4),n=st.n,base=st.base.map(c=>c.lab),outLab=st.out.map(c=>c.lab),outRGB=outLab.map(rgbBytes);
+  const mix=opt.mix,amt=opt.amt,dm=opt.dither,M=opt.method,tOf=i=>opt.spread?Y[i]:(L[i]-lo)/span;
+  const mat=dm==='b4'?[B4,4]:dm==='b8'?[B8,8]:null;
+  if(M==='ramp'){
+    let stops=outLab;if(n===1){const o=outLab[0];stops=[[.12,o[1]*.5,o[2]*.5],o,[.97,o[1]*.25,o[2]*.25]];}
+    const m=stops.length,lut=new Uint8ClampedArray(1024*3);
+    for(let i=0;i<1024;i++){const x=i/1023*(m-1),a=Math.min(m-2,Math.floor(x)),f=x-a,S=stops[a],T=stops[a+1],c=rgbBytes([S[0]+(T[0]-S[0])*f,S[1]+(T[1]-S[1])*f,S[2]+(T[2]-S[2])*f]);lut[i*3]=c[0];lut[i*3+1]=c[1];lut[i*3+2]=c[2];}
+    for(let i=0;i<N;i++){const v=Math.min(1023,Math.max(0,Math.round(tOf(i)*1023)))*3;out[i*4]=lut[v];out[i*4+1]=lut[v+1];out[i*4+2]=lut[v+2];}
+  }else if(M==='bands'){
+    const err=dm==='fs'?new Float32Array(N):null;
+    for(let y=0,i=0;y<h;y++)for(let x=0;x<w;x++,i++){
+      let t=tOf(i);if(mat)t+=mat[0][(y%mat[1])*mat[1]+x%mat[1]]*amt/n*1.6;if(err)t+=err[i];
+      const k=Math.max(0,Math.min(n-1,Math.floor(t*n)));
+      if(err){const e=(t-(k+.5)/n)*amt;if(x+1<w)err[i+1]+=e*7/16;if(y+1<h){if(x>0)err[i+w-1]+=e*3/16;err[i+w]+=e*5/16;if(x+1<w)err[i+w+1]+=e/16;}}
+      const c=outRGB[k];out[i*4]=c[0];out[i*4+1]=c[1];out[i*4+2]=c[2];
+    }
+  }else if(M==='nearest'){
+    const eL=dm==='fs'?new Float32Array(N*3):null;
+    for(let y=0,i=0;y<h;y++)for(let x=0;x<w;x++,i++){
+      let l=L[i],a=A[i],b=B[i];
+      if(mat){const d=mat[0][(y%mat[1])*mat[1]+x%mat[1]]*amt*.22;l+=d;}
+      if(eL){l+=eL[i*3];a+=eL[i*3+1];b+=eL[i*3+2];}
+      let bj=0,bd=1e9;for(let j=0;j<n;j++){const q=base[j],d=(l-q[0])**2+(a-q[1])**2+(b-q[2])**2;if(d<bd){bd=d;bj=j;}}
+      if(eL){const q=base[bj],r=[(l-q[0])*amt,(a-q[1])*amt,(b-q[2])*amt],sp=(o,f)=>{eL[o*3]+=r[0]*f;eL[o*3+1]+=r[1]*f;eL[o*3+2]+=r[2]*f;};
+        if(x+1<w)sp(i+1,7/16);if(y+1<h){if(x>0)sp(i+w-1,3/16);sp(i+w,5/16);if(x+1<w)sp(i+w+1,1/16);}}
+      const c=outRGB[bj];out[i*4]=c[0];out[i*4+1]=c[1];out[i*4+2]=c[2];
+    }
+  }else{ // recolor: shift each pixel by its colour group's move, softly blended between groups
+    const C=labClusters(n),s2=Math.pow(.015+opt.soft*.2,2),D=C.map((c,j)=>[outLab[j][0]-c[0],outLab[j][1]-c[1],outLab[j][2]-c[2]]);
+    for(let i=0;i<N;i++){
+      let sw=0,dl=0,da=0,db=0,best=1e9;const l=L[i],a=A[i],b=B[i],ds=new Float32Array(n);
+      for(let j=0;j<n;j++){const c=C[j],d=(l-c[0])**2+(a-c[1])**2+(b-c[2])**2;ds[j]=d;if(d<best)best=d;}
+      for(let j=0;j<n;j++){const wt=Math.exp(-(ds[j]-best)/s2);sw+=wt;dl+=wt*D[j][0];da+=wt*D[j][1];db+=wt*D[j][2];}
+      const c=rgbBytes([l+dl/sw,a+da/sw,b+db/sw]);out[i*4]=c[0];out[i*4+1]=c[1];out[i*4+2]=c[2];
+    }
+  }
+  for(let i=0;i<N;i++){const o=i*4;if(mix<1){out[o]=out[o]*mix+rgb[o]*(1-mix);out[o+1]=out[o+1]*mix+rgb[o+1]*(1-mix);out[o+2]=out[o+2]*mix+rgb[o+2]*(1-mix);}out[o+3]=255;}
+  return new ImageData(out,w,h);
+}
+function labOpts(){return {method:LAB.method,dither:LAB.dither,mix:+$('labMix').value/100,px:+$('labPx').value,soft:+$('labSoft').value/100,amt:+$('labAmt').value/100,spread:$('labSpread').checked};}
+const LAB_NOTES={ramp:'Gradient map: darkest palette color takes the shadows, lightest the highlights, blended between.',bands:'Luma ramp in hard steps — one flat band of light per palette color.',nearest:'Pure swap: every pixel becomes the closest palette color. Iterations rotate the colors under the same match.',recolor:"Moves the image's own color groups onto the palette and keeps the texture. Soft blends between groups."};
+function labUI(st){
+  const o=labOpts();
+  $('labStrip').innerHTML='';st.out.forEach(c=>{const sp=document.createElement('span');sp.style.background=c.hex;$('labStrip').appendChild(sp);});
+  $('labName').textContent=st.p.name;$('labIter').textContent='iteration '+st.iter+'/'+st.iters;
+  $('labOrig').textContent=st.iter===1?'Iter 1':'Back to 1';$('labRev').classList.toggle('on',LAB.rev);
+  document.querySelectorAll('#labMethod button').forEach(b=>b.classList.toggle('on',b.dataset.m===LAB.method));
+  document.querySelectorAll('#labDither button').forEach(b=>b.classList.toggle('on',b.dataset.d===LAB.dither));
+  $('labNote').textContent=LAB_NOTES[LAB.method];
+  const dOK=LAB.method==='bands'||LAB.method==='nearest';
+  $('labDitherRow').classList.toggle('off',!dOK);$('labAmtRow').classList.toggle('off',!dOK||LAB.dither==='off');
+  $('labSoftRow').classList.toggle('off',LAB.method!=='recolor');$('labSpread').parentNode.classList.toggle('off',!(LAB.method==='ramp'||LAB.method==='bands'));
+  $('labMixOut').textContent=$('labMix').value+'%';$('labPxOut').textContent=$('labPx').value;$('labSoftOut').textContent=$('labSoft').value;$('labAmtOut').textContent=$('labAmt').value;
+  $('labTag').textContent=(LAB.pal===0?'Current':'Saved '+LAB.pal)+' · it '+st.iter+'/'+st.iters;
+}
+function labDraw(){
+  LAB.raf=0;const st=labState();labUI(st);if(!LAB.src)return;
+  const o=labOpts(),cv=$('labView'),P=labPrep(LAB.src,900,o.px);
+  cv.width=P.w;cv.height=P.h;const g=cv.getContext('2d');
+  if(LAB.hold){const id=new ImageData(new Uint8ClampedArray(P.rgb),P.w,P.h);g.putImageData(id,0,0);$('labTag').textContent='Original';}
+  else g.putImageData(labRender(P,st,o),0,0);
+  cv.classList.toggle('px',o.px>1);labFit();
+}
+function labFit(){
+  const cv=$('labView'),r=$('labStage').getBoundingClientRect();if(!cv.width||!r.width)return;
+  const P=labPrep(LAB.src,900,1),k=Math.min((r.width-16)/P.W,(r.height-16)/P.H);
+  cv.style.width=Math.round(P.W*k)+'px';cv.style.height=Math.round(P.H*k)+'px';
+}
+function labQueue(){if(!LAB.raf)LAB.raf=requestAnimationFrame(labDraw);}
+function labSetSource(cv){LAB.src=cv;LAB.prep={};LAB.clusters={};$('labEmpty').hidden=true;$('labView').hidden=false;$('labTag').hidden=false;labQueue();}
+function openLab(){
+  closeSheet();$('lab').hidden=false;LAB.pal=0;LAB.cyc=0;LAB.rev=false;
+  if(!LAB.src&&IMG.src)labSetSource(IMG.src);
+  if(!LAB.src){$('labEmpty').hidden=false;$('labView').hidden=true;$('labTag').hidden=true;}
+  labQueue();
+}
+function labFlipPal(d){LAB.pal+=d;LAB.cyc=0;LAB.rev=false;labQueue();}
+function labFlipIter(d){const st=labState(),n=st.n;let it=LAB.cyc+(LAB.rev?n:0)+d;it=((it%(2*n))+2*n)%(2*n);LAB.rev=it>=n;LAB.cyc=it%n;labQueue();}
+$('labClose').addEventListener('click',()=>{$('lab').hidden=true;});
+$('labFold').addEventListener('click',()=>{const f=$('lab').classList.toggle('folded');$('labFold').textContent=f?'▴':'▾';requestAnimationFrame(labFit);});
+$('labChoose').addEventListener('click',()=>$('tryFile').click());
+$('labChange').addEventListener('click',()=>$('tryFile').click());
+$('labPrev').addEventListener('click',()=>labFlipPal(-1));$('labNext').addEventListener('click',()=>labFlipPal(1));
+$('labCycM').addEventListener('click',()=>labFlipIter(-1));$('labCycP').addEventListener('click',()=>labFlipIter(1));
+$('labRev').addEventListener('click',()=>{LAB.rev=!LAB.rev;labQueue();});
+$('labOrig').addEventListener('click',()=>{LAB.cyc=0;LAB.rev=false;labQueue();});
+$('labMethod').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;LAB.method=b.dataset.m;labQueue();});
+$('labDither').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;LAB.dither=b.dataset.d;labQueue();});
+['labMix','labPx','labSoft','labAmt'].forEach(id=>$(id).addEventListener('input',labQueue));$('labSpread').addEventListener('change',labQueue);
+$('labUse').addEventListener('click',()=>{
+  const st=labState();colors=st.out.map(c=>({...parseColor(c.hex),locked:false}));setCount(colors.length);active=0;anchor=-1;srcThumb=LAB.src?makeThumb(LAB.src):null;
+  $('lab').hidden=true;render();toast('Palette in use');
+});
+$('labSnap').addEventListener('click',()=>{
+  if(!LAB.src){toast('Choose an image first');return;}
+  const o=labOpts(),big=Math.min(2048,Math.max(LAB.src.width,LAB.src.height)),P=labPrep(LAB.src,big,Math.max(1,Math.round(o.px*big/900)));
+  const c=document.createElement('canvas');c.width=P.W;c.height=P.H;const t=document.createElement('canvas');t.width=P.w;t.height=P.h;t.getContext('2d').putImageData(labRender(P,labState(),o),0,0);
+  const g=c.getContext('2d');g.imageSmoothingEnabled=o.px<=1;g.drawImage(t,0,0,P.W,P.H);
+  showShot(b64ToBytes(c.toDataURL('image/png').split(',')[1]),'chroma-image-lab.png');
+});
+/* contact sheets: the image under every palette, or under every iteration of this one */
+function labContact(kind){
+  if(!LAB.src){toast('Choose an image first');return;}
+  const o=labOpts(),keep={pal:LAB.pal,cyc:LAB.cyc,rev:LAB.rev},items=[];
+  if(kind==='pal'){const n=Math.min(30,labPalettes().length);for(let p=0;p<n;p++)items.push({pal:p,cyc:0,rev:false});}
+  else{const n=labState().n;for(let r=0;r<2;r++)for(let k=0;k<n;k++)items.push({pal:LAB.pal,cyc:k,rev:!!r});}
+  const P=labPrep(LAB.src,360,Math.max(1,Math.round(o.px*360/900))),cols=items.length<=4?2:3,tw=400,th=Math.round(tw*P.H/P.W),strip=22,ch=th+strip;
+  const c=document.createElement('canvas');c.width=cols*tw;c.height=Math.ceil(items.length/cols)*ch;const g=c.getContext('2d');g.fillStyle='#111316';g.fillRect(0,0,c.width,c.height);
+  const t=document.createElement('canvas');t.width=P.w;t.height=P.h;const tg=t.getContext('2d');
+  items.forEach((it,i)=>{
+    LAB.pal=it.pal;LAB.cyc=it.cyc;LAB.rev=it.rev;const st=labState(),x=(i%cols)*tw,y=Math.floor(i/cols)*ch;
+    tg.putImageData(labRender(P,st,o),0,0);g.imageSmoothingEnabled=o.px<=1;g.drawImage(t,x,y,tw,th);
+    const sw=tw/st.n;st.out.forEach((cc,k)=>{g.fillStyle=cc.hex;g.fillRect(Math.round(x+k*sw),y+th,Math.ceil(sw),strip);});
+    g.fillStyle='rgba(0,0,0,.55)';g.fillRect(x+6,y+6,kind==='pal'?92:74,20);g.fillStyle='#fff';g.font='600 12px ui-monospace,Menlo,monospace';g.textBaseline='middle';
+    g.fillText(kind==='pal'?(it.pal===0?'Current':'Saved '+it.pal):'it '+st.iter+'/'+st.iters,x+12,y+16);
+  });
+  Object.assign(LAB,keep);labQueue();
+  showShot(b64ToBytes(c.toDataURL('image/png').split(',')[1]),kind==='pal'?'chroma-lab-palettes.png':'chroma-lab-iterations.png');
+}
+$('labSheetP').addEventListener('click',()=>labContact('pal'));$('labSheetI').addEventListener('click',()=>labContact('it'));
+/* stage gestures: swipe sideways = palettes, up/down = iterations, hold = original */
+(()=>{let g=null;const st=$('labStage');
+  st.addEventListener('pointerdown',e=>{if(!LAB.src)return;g={x:e.clientX,y:e.clientY,t:setTimeout(()=>{if(g){g.hold=true;LAB.hold=true;labQueue();}},260)};});
+  st.addEventListener('pointermove',e=>{if(g&&!g.hold&&Math.hypot(e.clientX-g.x,e.clientY-g.y)>12)clearTimeout(g.t);});
+  const end=e=>{if(!g)return;clearTimeout(g.t);
+    if(g.hold){LAB.hold=false;labQueue();}
+    else{const dx=e.clientX-g.x,dy=e.clientY-g.y;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy))labFlipPal(dx<0?1:-1);else if(Math.abs(dy)>45)labFlipIter(dy<0?1:-1);}
+    g=null;};
+  st.addEventListener('pointerup',end);st.addEventListener('pointercancel',()=>{if(g){clearTimeout(g.t);if(g.hold){LAB.hold=false;labQueue();}}g=null;});
+  st.addEventListener('contextmenu',e=>e.preventDefault());
+  addEventListener('resize',()=>{if(!$('lab').hidden)labFit();});
+})();
 $('tryFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;const url=URL.createObjectURL(f),im=new Image();
-  im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);URL.revokeObjectURL(url);tryOn(c);};
+  im.onload=()=>{const sc=Math.min(1,2048/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*sc);c.height=Math.round(im.naturalHeight*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);labSetSource(c);};
   im.onerror=()=>{URL.revokeObjectURL(url);toast('Could not open that image');};im.src=url;});
 
 /* ================= snapshot (long-press save overlay) ================= */
@@ -1340,7 +1550,7 @@ document.querySelectorAll('.tile').forEach(t=>t.addEventListener('click',()=>{
   else if(a==='save')savePalette();
   else if(a==='saved')openSheet('saved');
   else if(a==='sheet')makeSheet();
-  else if(a==='tryon'){if(IMG.src)tryOn(IMG.src);else $('tryFile').click();}
+  else if(a==='tryon')openLab();
   else if(a==='export')openSheet('export');
   else if(a==='details')openSheet('details');
   else if(a==='theory')openSheet('theory');
